@@ -1,0 +1,9 @@
+[gd_resource type="GradientTexture2D" format=3 uid="uid://chcwp1vv133nf"]
+
+[sub_resource type="Gradient" id="Gradient_tikia"]
+colors = PackedColorArray(0.34337148, 0.063873835, 0.029719932, 1, 0.39215687, 0.078431375, 0.039215688, 1)
+
+[resource]
+gradient = SubResource("Gradient_tikia")
+width = 16
+height = 16

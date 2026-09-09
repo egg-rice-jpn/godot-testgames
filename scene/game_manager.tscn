@@ -1,0 +1,123 @@
+[gd_scene format=3 uid="uid://duc6sq1nro5tr"]
+
+[ext_resource type="Script" uid="uid://bmaih4c5p0m2a" path="res://scripts/game_manager.gd" id="1_8cna3"]
+[ext_resource type="Texture2D" uid="uid://bkonw3bg5187f" path="res://wall.tres" id="2_hy1te"]
+[ext_resource type="Texture2D" uid="uid://chcwp1vv133nf" path="res://floor.tres" id="3_yyxvu"]
+[ext_resource type="Texture2D" uid="uid://x3wgusvnrbb1" path="res://sprites/MiniShieldMan.png" id="4_8cna3"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_d5upp"]
+texture = ExtResource("2_hy1te")
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vk86k"]
+texture = ExtResource("3_yyxvu")
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_d5upp"]
+sources/0 = SubResource("TileSetAtlasSource_d5upp")
+sources/1 = SubResource("TileSetAtlasSource_vk86k")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hy1te"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yyxvu"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_05tyy"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fi3ik"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_re6s4"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vknke"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4v7hy"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r8oq5"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1q0wa"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8hpyf"]
+atlas = ExtResource("4_8cna3")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_00qp5"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hy1te")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yyxvu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_05tyy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fi3ik")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_re6s4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vknke")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4v7hy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r8oq5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1q0wa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8hpyf")
+}],
+"loop": 1,
+"name": &"walk",
+"speed": 1.0
+}]
+
+[node name="GameManager" type="Node2D" unique_id=1330936903]
+script = ExtResource("1_8cna3")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1368307260]
+tile_set = SubResource("TileSet_d5upp")
+
+[node name="Player" type="AnimatedSprite2D" parent="." unique_id=1403939081]
+sprite_frames = SubResource("SpriteFrames_00qp5")
+autoplay = "default"
+frame_progress = 0.5041589
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1588386557]
+position_smoothing_enabled = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=105210851]
+
+[node name="HPLabel" type="Label" parent="CanvasLayer" unique_id=731037482]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 56.0
+offset_bottom = 39.0
