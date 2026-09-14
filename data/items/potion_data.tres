@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bdv7iybav4y8i"]
+
+[ext_resource type="Script" uid="uid://byd5r6bp2t1yl" path="res://scripts/item_data.gd" id="1_s3cky"]
+
+[resource]
+script = ExtResource("1_s3cky")
+display_name = "ポーション"
+metadata/_custom_type_script = "uid://byd5r6bp2t1yl"

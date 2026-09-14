@@ -1,21 +1,17 @@
 [gd_scene format=3 uid="uid://duc6sq1nro5tr"]
 
 [ext_resource type="Script" uid="uid://bmaih4c5p0m2a" path="res://scripts/game_manager.gd" id="1_8cna3"]
-[ext_resource type="Texture2D" uid="uid://bkonw3bg5187f" path="res://wall.tres" id="2_hy1te"]
-[ext_resource type="Texture2D" uid="uid://chcwp1vv133nf" path="res://floor.tres" id="3_yyxvu"]
 [ext_resource type="Texture2D" uid="uid://x3wgusvnrbb1" path="res://sprites/MiniShieldMan.png" id="4_8cna3"]
+[ext_resource type="Texture2D" uid="uid://dxnlbw3u20pe7" path="res://terrain/tiles.png" id="5_yyxvu"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_d5upp"]
-texture = ExtResource("2_hy1te")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a81tu"]
+texture = ExtResource("5_yyxvu")
 0:0/0 = 0
+0:2/0 = 0
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vk86k"]
-texture = ExtResource("3_yyxvu")
-0:0/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_d5upp"]
-sources/0 = SubResource("TileSetAtlasSource_d5upp")
-sources/1 = SubResource("TileSetAtlasSource_vk86k")
+[sub_resource type="TileSet" id="TileSet_3c3go"]
+tile_size = Vector2i(32, 27)
+sources/0 = SubResource("TileSetAtlasSource_a81tu")
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hy1te"]
 atlas = ExtResource("4_8cna3")
@@ -102,14 +98,16 @@ animations = [{
 
 [node name="GameManager" type="Node2D" unique_id=1330936903]
 script = ExtResource("1_8cna3")
+current_map_path = null
 
 [node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1368307260]
-tile_set = SubResource("TileSet_d5upp")
+tile_map_data = PackedByteArray(0, 0, 15, 0, 250, 255, 3, 0, 0, 0, 0, 0, 0, 0)
+tile_set = SubResource("TileSet_3c3go")
 
 [node name="Player" type="AnimatedSprite2D" parent="." unique_id=1403939081]
 sprite_frames = SubResource("SpriteFrames_00qp5")
+animation = &"walk"
 autoplay = "default"
-frame_progress = 0.5041589
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1588386557]
 position_smoothing_enabled = true
@@ -121,3 +119,9 @@ offset_left = 16.0
 offset_top = 16.0
 offset_right = 56.0
 offset_bottom = 39.0
+
+[node name="InventoryLabel" type="Label" parent="CanvasLayer" unique_id=1272206763]
+offset_left = 16.0
+offset_top = 48.0
+offset_right = 56.0
+offset_bottom = 71.0

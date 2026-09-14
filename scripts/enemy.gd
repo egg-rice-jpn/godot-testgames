@@ -1,7 +1,7 @@
 extends Sprite2D
 class_name Enemy
 
-const TILE_SIZE = 16
+const TILE_SIZE = 32
 
 @export var data: EnemyData  # ▼追加：どの種類の敵かをここで受け取る
 
