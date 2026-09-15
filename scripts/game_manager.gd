@@ -97,7 +97,7 @@ func draw_map() -> void:
 			if map_data[x][y] == TileType.WALL:
 				tile_map_layer.set_cell(coords, 0, Vector2i(0, 0))
 			else:
-				tile_map_layer.set_cell(coords, 1, Vector2i(0, 0))
+				tile_map_layer.set_cell(coords, 0, Vector2i(0, 1))
 
 func spawn_enemies() -> void:
 	for entry in enemy_spawn_points:
