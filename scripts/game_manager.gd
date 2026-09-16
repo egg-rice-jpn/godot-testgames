@@ -5,6 +5,7 @@ extends Node2D
 @onready var inventory_label: Label = $CanvasLayer/InventoryLabel
 
 const EnemyScene = preload("res://scene/enemy.tscn")
+const ItemScene = preload("res://scene/item.tscn")
 
 @export var slime_data: EnemyData = preload("res://data/enemies/slime_data.tres")
 @export var goblin_data: EnemyData = preload("res://data/enemies/goblin_data.tres")
@@ -28,6 +29,7 @@ var enemy_spawn_points: Array = []
 
 var item_spawn_points: Array = []
 var items_on_ground: Dictionary = {}
+var item_visuals: Dictionary = {}
 var player_inventory: Array[ItemData] = []
 
 var is_moving: bool = false
@@ -107,11 +109,17 @@ func spawn_enemies() -> void:
 		e.set_grid_pos_immediate(entry.pos)
 		enemies.append(e)
 
-# ▼追加：マップ上のアイテム初期配置を反映
+# ▼変更：アイテムの見た目もマップ上にスポーンさせる
 func place_items() -> void:
 	items_on_ground.clear()
+	item_visuals.clear()
 	for entry in item_spawn_points:
 		items_on_ground[entry.pos] = entry.data
+		var iv: ItemVisual = ItemScene.instantiate()
+		add_child(iv)
+		iv.setup(entry.data)
+		iv.set_grid_pos(entry.pos)
+		item_visuals[entry.pos] = iv
 
 func get_enemy_at(pos: Vector2i) -> Enemy:
 	for e in enemies:
@@ -141,12 +149,12 @@ func try_move_player(direction: Vector2i) -> void:
 		player.flip_h = true
 
 	var target_pos = player_grid_pos + direction
-	# ▼一時的に追加：デバッグ用ログ
+
 	print("player_grid_pos: ", player_grid_pos, " / target_pos: ", target_pos, " / player.position: ", player.position)
 
 	if target_pos.x >= 0 and target_pos.x < MAP_WIDTH and target_pos.y >= 0 and target_pos.y < MAP_HEIGHT:
 		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
-			print("壁にぶつかりました（データ上で判定）")
+			print("壁にぶつかりました（データ上で判定） target_pos: ", target_pos)
 			return
 
 		var target_enemy = get_enemy_at(target_pos)
@@ -157,7 +165,6 @@ func try_move_player(direction: Vector2i) -> void:
 		player_grid_pos = target_pos
 		update_player_position_visual()
 
-		# ▼追加：移動先にアイテムがあれば拾う
 		if items_on_ground.has(player_grid_pos):
 			pick_up_item(player_grid_pos)
 
@@ -174,11 +181,16 @@ func attack_enemy(target_enemy: Enemy) -> void:
 
 	call_enemy_turn()
 
-# ▼追加：アイテムを拾う処理
+# ▼変更：アイテムを拾ったら見た目も消す
 func pick_up_item(pos: Vector2i) -> void:
 	var item: ItemData = items_on_ground[pos]
 	player_inventory.append(item)
 	items_on_ground.erase(pos)
+
+	if item_visuals.has(pos):
+		item_visuals[pos].queue_free()
+		item_visuals.erase(pos)
+
 	print("拾った: ", item.display_name)
 	update_inventory_label()
 
@@ -254,7 +266,6 @@ func player_take_damage(amount: int) -> void:
 func update_hp_label() -> void:
 	hp_label.text = "HP: %d / %d" % [player_hp, player_max_hp]
 
-# ▼追加：インベントリ表示の更新
 func update_inventory_label() -> void:
 	if player_inventory.is_empty():
 		inventory_label.text = "持ち物: なし"

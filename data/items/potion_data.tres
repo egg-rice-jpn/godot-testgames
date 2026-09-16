@@ -1,8 +1,14 @@
 [gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bdv7iybav4y8i"]
 
+[ext_resource type="Texture2D" uid="uid://b14rv6t2vk50y" path="res://sprites/items.png" id="1_lkcgl"]
 [ext_resource type="Script" uid="uid://byd5r6bp2t1yl" path="res://scripts/item_data.gd" id="1_s3cky"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_10yq8"]
+atlas = ExtResource("1_lkcgl")
+region = Rect2(32, 640, 32, 32)
 
 [resource]
 script = ExtResource("1_s3cky")
 display_name = "ポーション"
+icon = SubResource("AtlasTexture_10yq8")
 metadata/_custom_type_script = "uid://byd5r6bp2t1yl"
