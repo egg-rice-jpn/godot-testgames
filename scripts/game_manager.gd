@@ -141,6 +141,8 @@ func try_move_player(direction: Vector2i) -> void:
 		player.flip_h = true
 
 	var target_pos = player_grid_pos + direction
+	# ▼一時的に追加：デバッグ用ログ
+	print("player_grid_pos: ", player_grid_pos, " / target_pos: ", target_pos, " / player.position: ", player.position)
 
 	if target_pos.x >= 0 and target_pos.x < MAP_WIDTH and target_pos.y >= 0 and target_pos.y < MAP_HEIGHT:
 		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
