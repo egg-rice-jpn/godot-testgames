@@ -7,6 +7,7 @@ extends Node2D
 
 
 const EnemyScene = preload("res://scene/enemy.tscn")
+const ItemScene = preload("res://scene/item.tscn")
 
 @export var slime_data: EnemyData = preload("res://data/enemies/slime_data.tres")
 @export var goblin_data: EnemyData = preload("res://data/enemies/goblin_data.tres")
@@ -30,6 +31,7 @@ var enemy_spawn_points: Array = []
 
 var item_spawn_points: Array = []
 var items_on_ground: Dictionary = {}
+var item_visuals: Dictionary = {}
 var player_inventory: Array[ItemData] = []
 
 var is_moving: bool = false
@@ -111,18 +113,23 @@ func spawn_enemies() -> void:
 		e.set_grid_pos_immediate(entry.pos)
 		enemies.append(e)
 
-# ▼追加：マップ上のアイテム初期配置を反映
-func place_items() -> void:
+# ▼変更�E�アイチE��の見た目も�EチE�E上にスポ�EンさせめEfunc place_items() -> void:
 	items_on_ground.clear()
+	item_visuals.clear()
 	for entry in item_spawn_points:
 		items_on_ground[entry.pos] = entry.data
+		var iv: ItemVisual = ItemScene.instantiate()
+		add_child(iv)
+		iv.setup(entry.data)
+		iv.set_grid_pos(entry.pos)
+		item_visuals[entry.pos] = iv
 
 func get_enemy_at(pos: Vector2i) -> Enemy:
 	for e in enemies:
 		if e.grid_pos == pos:
 			return e
 	return null
-# ▼追加：攻撃者から見て、対象の背後を取っているか判定する共通関数
+# ▼追加�E�攻撁E��E��ら見て、対象の背後を取ってぁE��か判定する�E通関数
 func is_backstab(attacker_pos: Vector2i, target_pos: Vector2i, target_facing: Vector2i) -> bool:
 	var attack_dir = target_pos - attacker_pos
 	return attack_dir == target_facing
@@ -153,9 +160,11 @@ func try_move_player(direction: Vector2i) -> void:
 
 	var target_pos = player_grid_pos + direction
 
+	print("player_grid_pos: ", player_grid_pos, " / target_pos: ", target_pos, " / player.position: ", player.position)
+
 	if target_pos.x >= 0 and target_pos.x < MAP_WIDTH and target_pos.y >= 0 and target_pos.y < MAP_HEIGHT:
 		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
-			print("壁にぶつかりました（データ上で判定）")
+			print("壁にぶつかりました�E�データ上で判定！Etarget_pos: ", target_pos)
 			return
 
 		var target_enemy = get_enemy_at(target_pos)
@@ -166,7 +175,6 @@ func try_move_player(direction: Vector2i) -> void:
 		player_grid_pos = target_pos
 		update_player_position_visual()
 
-		# ▼追加：移動先にアイテムがあれば拾う
 		if items_on_ground.has(player_grid_pos):
 			pick_up_item(player_grid_pos)
 
@@ -175,25 +183,29 @@ func try_move_player(direction: Vector2i) -> void:
 func attack_enemy(target_enemy: Enemy) -> void:
 	var damage = 1
 	if is_backstab(player_grid_pos, target_enemy.grid_pos, target_enemy.facing):
-		damage = 3  # ▼追加：背後を取っていたらダメージ3倍
-		print("背後を取った！ 大ダメージ！")
+		damage = 3  # ▼追加�E�背後を取ってぁE��らダメージ3倁E		print("背後を取った！E大ダメージ�E�E)
 
 	var died = target_enemy.take_damage(damage)
-	print("敵に攻撃！ 残りHP: ", target_enemy.hp)
+	print("敵に攻撁E��E残りHP: ", target_enemy.hp)
 
 	if died:
-		print("敵を倒した！")
+		print("敵を倒した！E)
 		enemies.erase(target_enemy)
 		target_enemy.queue_free()
 
 	call_enemy_turn()
 
-# ▼追加：アイテムを拾う処理
+# ▼変更�E�アイチE��を拾ったら見た目も消す
 func pick_up_item(pos: Vector2i) -> void:
 	var item: ItemData = items_on_ground[pos]
 	player_inventory.append(item)
 	items_on_ground.erase(pos)
-	print("拾った: ", item.display_name)
+
+	if item_visuals.has(pos):
+		item_visuals[pos].queue_free()
+		item_visuals.erase(pos)
+
+	print("拾っぁE ", item.display_name)
 	update_inventory_label()
 
 func update_player_position_visual() -> void:
@@ -236,8 +248,7 @@ func move_enemy_toward_player(e: Enemy) -> void:
 			if abs(diff.x) + abs(diff.y) == 1:
 				attack_player_from(e)
 			return
-		"wander":  # ▼追加：ランダムにその場を徘徊する
-			wander_enemy(e)
+		"wander":  # ▼追加�E�ランダムにそ�E場を徘徊すめE			wander_enemy(e)
 			return
 		"chase", _:
 			pass
@@ -299,11 +310,11 @@ func attack_player_from(e: Enemy) -> void:
 	var damage = 1
 	if is_backstab(e.grid_pos, player_grid_pos, player_facing):
 		damage = 3
-		print("敵に背後を取られた！ 大ダメージ！")
+		print("敵に背後を取られた�E�E大ダメージ�E�E)
 	player_take_damage(damage)
 func player_take_damage(amount: int) -> void:
 	player_hp -= amount
-	print("プレイヤーが攻撃を受けた！ 残りHP: ", player_hp)
+	print("プレイヤーが攻撁E��受けた！E残りHP: ", player_hp)
 	update_hp_label()
 
 	if player_hp <= 0:
@@ -312,10 +323,9 @@ func player_take_damage(amount: int) -> void:
 func update_hp_label() -> void:
 	hp_label.text = "HP: %d / %d" % [player_hp, player_max_hp]
 
-# ▼追加：インベントリ表示の更新
 func update_inventory_label() -> void:
 	if player_inventory.is_empty():
-		inventory_label.text = "持ち物: なし"
+		inventory_label.text = "持ち物: なぁE
 		return
 	var names: Array[String] = []
 	for item in player_inventory:
@@ -324,5 +334,5 @@ func update_inventory_label() -> void:
 
 func game_over() -> void:
 	is_game_over = true
-	print("ゲームオーバー...")
+	print("ゲームオーバ�E...")
 	hp_label.text = "GAME OVER"
