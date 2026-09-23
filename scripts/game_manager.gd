@@ -3,6 +3,8 @@ extends Node2D
 @onready var player: AnimatedSprite2D = $Player
 @onready var hp_label: Label = $CanvasLayer/HPLabel
 @onready var inventory_label: Label = $CanvasLayer/InventoryLabel
+@onready var facing_arrow: Polygon2D = $Player/FacingArrow
+
 
 const EnemyScene = preload("res://scene/enemy.tscn")
 
@@ -33,8 +35,9 @@ var player_inventory: Array[ItemData] = []
 var is_moving: bool = false
 var move_tween: Tween
 
-var player_hp: int = 5
-var player_max_hp: int = 5
+var player_hp: int = 20
+var player_max_hp: int = 20
+var player_facing: Vector2i = Vector2i.DOWN
 var is_game_over: bool = false
 
 func _ready() -> void:
@@ -45,6 +48,7 @@ func _ready() -> void:
 	place_items()
 	update_hp_label()
 	update_inventory_label()
+	update_facing_visual()
 
 func load_map_layout(path: String) -> Array[String]:
 	var lines: Array[String] = []
@@ -97,7 +101,7 @@ func draw_map() -> void:
 			if map_data[x][y] == TileType.WALL:
 				tile_map_layer.set_cell(coords, 0, Vector2i(0, 0))
 			else:
-				tile_map_layer.set_cell(coords, 1, Vector2i(0, 0))
+				tile_map_layer.set_cell(coords, 0, Vector2i(0, 2))
 
 func spawn_enemies() -> void:
 	for entry in enemy_spawn_points:
@@ -118,6 +122,10 @@ func get_enemy_at(pos: Vector2i) -> Enemy:
 		if e.grid_pos == pos:
 			return e
 	return null
+# ▼追加：攻撃者から見て、対象の背後を取っているか判定する共通関数
+func is_backstab(attacker_pos: Vector2i, target_pos: Vector2i, target_facing: Vector2i) -> bool:
+	var attack_dir = target_pos - attacker_pos
+	return attack_dir == target_facing
 
 func _unhandled_input(event: InputEvent) -> void:
 	if is_game_over:
@@ -134,6 +142,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func try_move_player(direction: Vector2i) -> void:
 	if is_moving:
 		return
+
+	player_facing = direction
+	update_facing_visual()
 
 	if direction.x > 0:
 		player.flip_h = false
@@ -162,7 +173,12 @@ func try_move_player(direction: Vector2i) -> void:
 		call_enemy_turn()
 
 func attack_enemy(target_enemy: Enemy) -> void:
-	var died = target_enemy.take_damage(1)
+	var damage = 1
+	if is_backstab(player_grid_pos, target_enemy.grid_pos, target_enemy.facing):
+		damage = 3  # ▼追加：背後を取っていたらダメージ3倍
+		print("背後を取った！ 大ダメージ！")
+
+	var died = target_enemy.take_damage(damage)
 	print("敵に攻撃！ 残りHP: ", target_enemy.hp)
 
 	if died:
@@ -195,7 +211,18 @@ func update_player_position_visual() -> void:
 		is_moving = false
 		player.play("default")
 	)
+func update_facing_visual() -> void:
+	var angle = 0.0
+	if player_facing == Vector2i.UP:
+		angle = 0.0
+	elif player_facing == Vector2i.DOWN:
+		angle = PI
+	elif player_facing == Vector2i.RIGHT:
+		angle = PI / 2
+	elif player_facing == Vector2i.LEFT:
+		angle = -PI / 2
 
+	facing_arrow.rotation = angle
 func call_enemy_turn() -> void:
 	for e in enemies:
 		move_enemy_toward_player(e)
@@ -207,10 +234,15 @@ func move_enemy_toward_player(e: Enemy) -> void:
 		"stay":
 			var diff = player_grid_pos - e.grid_pos
 			if abs(diff.x) + abs(diff.y) == 1:
-				player_take_damage(1)
+				attack_player_from(e)
+			return
+		"wander":  # ▼追加：ランダムにその場を徘徊する
+			wander_enemy(e)
 			return
 		"chase", _:
 			pass
+
+
 
 	var diff = player_grid_pos - e.grid_pos
 
@@ -233,14 +265,42 @@ func move_enemy_toward_player(e: Enemy) -> void:
 		return
 
 	if target_pos == player_grid_pos:
-		player_take_damage(1)
+		attack_player_from(e)  # ▼変更
 		return
 
 	if get_enemy_at(target_pos) != null:
 		return
 
 	e.move_to(target_pos)
+func wander_enemy(e: Enemy) -> void:
+	var diff = player_grid_pos - e.grid_pos
+	if abs(diff.x) + abs(diff.y) == 1:
+		attack_player_from(e)
+		return
 
+	var directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	directions.shuffle()
+
+	for dir in directions:
+		var target_pos = e.grid_pos + dir
+		if target_pos.x < 0 or target_pos.x >= MAP_WIDTH or target_pos.y < 0 or target_pos.y >= MAP_HEIGHT:
+			continue
+		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
+			continue
+		if target_pos == player_grid_pos:
+			continue
+		if get_enemy_at(target_pos) != null:
+			continue
+
+		e.move_to(target_pos)
+		return
+# ▼ここに追加
+func attack_player_from(e: Enemy) -> void:
+	var damage = 1
+	if is_backstab(e.grid_pos, player_grid_pos, player_facing):
+		damage = 3
+		print("敵に背後を取られた！ 大ダメージ！")
+	player_take_damage(damage)
 func player_take_damage(amount: int) -> void:
 	player_hp -= amount
 	print("プレイヤーが攻撃を受けた！ 残りHP: ", player_hp)

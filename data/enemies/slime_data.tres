@@ -1,12 +1,16 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ci70apavjmw7u"]
 
 [ext_resource type="Script" uid="uid://b6yv8xok3nogc" path="res://scripts/enemy_data.gd" id="1_3sa2x"]
-[ext_resource type="Texture2D" uid="uid://cfck7pubpjfh" path="res://slime.png" id="2_bjiqa"]
+[ext_resource type="Texture2D" uid="uid://c2acq61hl5giy" path="res://sprites/monsters.png" id="2_4puiq"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nrchv"]
+atlas = ExtResource("2_4puiq")
+region = Rect2(1, 64, 32, 32)
 
 [resource]
 script = ExtResource("1_3sa2x")
 display_name = "slime"
-max_hp = 2
-sprite = ExtResource("2_bjiqa")
+max_hp = 6
+sprite = SubResource("AtlasTexture_nrchv")
 move_pattern = "stay"
 metadata/_custom_type_script = "uid://b6yv8xok3nogc"

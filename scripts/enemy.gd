@@ -8,6 +8,8 @@ const TILE_SIZE = 32
 var grid_pos: Vector2i
 var hp: int  # ▼変更：初期値は決め打ちせず、dataから設定する
 var move_tween: Tween
+var facing: Vector2i = Vector2i.DOWN  # ▼追加：敵の向き
+var wander_counter: int = 0  # ▼追加
 
 func setup(enemy_data: EnemyData) -> void:  # ▼追加：スポーン時にデータを適用する関数
 	data = enemy_data
@@ -20,6 +22,10 @@ func set_grid_pos_immediate(pos: Vector2i) -> void:
 	position = Vector2(grid_pos * TILE_SIZE) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
 
 func move_to(pos: Vector2i) -> void:
+	# ▼追加：移動方向から向きを更新
+	var direction = pos - grid_pos
+	if direction != Vector2i.ZERO:
+		facing = direction
 	grid_pos = pos
 	var target_screen_pos = Vector2(grid_pos * TILE_SIZE) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
 	if move_tween:

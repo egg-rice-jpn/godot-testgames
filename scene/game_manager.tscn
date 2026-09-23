@@ -6,11 +6,12 @@
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a81tu"]
 texture = ExtResource("5_yyxvu")
+texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
 0:2/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_3c3go"]
-tile_size = Vector2i(32, 27)
+tile_size = Vector2i(32, 32)
 sources/0 = SubResource("TileSetAtlasSource_a81tu")
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hy1te"]
@@ -98,7 +99,6 @@ animations = [{
 
 [node name="GameManager" type="Node2D" unique_id=1330936903]
 script = ExtResource("1_8cna3")
-current_map_path = null
 
 [node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1368307260]
 tile_map_data = PackedByteArray(0, 0, 15, 0, 250, 255, 3, 0, 0, 0, 0, 0, 0, 0)
@@ -111,6 +111,10 @@ autoplay = "default"
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1588386557]
 position_smoothing_enabled = true
+
+[node name="FacingArrow" type="Polygon2D" parent="Player" unique_id=725486067]
+polygon = PackedVector2Array(0, -74, -24, -53, -10, -53, -10, -20, 10, -20, 9, -52, 24, -50)
+uv = PackedVector2Array(0, -74, -24, -53, -10, -53, -10, -20, 10, -20, 9, -52, 24, -50)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=105210851]
 

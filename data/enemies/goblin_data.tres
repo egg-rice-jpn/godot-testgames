@@ -1,10 +1,14 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://rb6q8iwn8i6r"]
 
 [ext_resource type="Script" uid="uid://b6yv8xok3nogc" path="res://scripts/enemy_data.gd" id="1_ijfau"]
-[ext_resource type="Texture2D" uid="uid://dibdp0ht38i5u" path="res://goblin.png" id="2_0a85t"]
+[ext_resource type="Texture2D" uid="uid://c2acq61hl5giy" path="res://sprites/monsters.png" id="2_m188w"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l0k5m"]
+atlas = ExtResource("2_m188w")
+region = Rect2(0, 0, 32, 32)
 
 [resource]
 script = ExtResource("1_ijfau")
 display_name = "goblin"
-sprite = ExtResource("2_0a85t")
+sprite = SubResource("AtlasTexture_l0k5m")
 metadata/_custom_type_script = "uid://b6yv8xok3nogc"
