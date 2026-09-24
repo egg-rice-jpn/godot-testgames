@@ -113,7 +113,8 @@ func spawn_enemies() -> void:
 		e.set_grid_pos_immediate(entry.pos)
 		enemies.append(e)
 
-# ▼変更�E�アイチE��の見た目も�EチE�E上にスポ�EンさせめEfunc place_items() -> void:
+# ▼変更：アイテムの見た目も表示する
+func place_items() -> void:
 	items_on_ground.clear()
 	item_visuals.clear()
 	for entry in item_spawn_points:
@@ -129,7 +130,7 @@ func get_enemy_at(pos: Vector2i) -> Enemy:
 		if e.grid_pos == pos:
 			return e
 	return null
-# ▼追加�E�攻撁E��E��ら見て、対象の背後を取ってぁE��か判定する�E通関数
+# ▼追加：攻撃者から見て、対象の背後を取っているか判定する共通関数
 func is_backstab(attacker_pos: Vector2i, target_pos: Vector2i, target_facing: Vector2i) -> bool:
 	var attack_dir = target_pos - attacker_pos
 	return attack_dir == target_facing
@@ -164,7 +165,7 @@ func try_move_player(direction: Vector2i) -> void:
 
 	if target_pos.x >= 0 and target_pos.x < MAP_WIDTH and target_pos.y >= 0 and target_pos.y < MAP_HEIGHT:
 		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
-			print("壁にぶつかりました�E�データ上で判定！Etarget_pos: ", target_pos)
+			print("壁にぶつかりました（データ上で判定） target_pos: ", target_pos)
 			return
 
 		var target_enemy = get_enemy_at(target_pos)
@@ -183,19 +184,20 @@ func try_move_player(direction: Vector2i) -> void:
 func attack_enemy(target_enemy: Enemy) -> void:
 	var damage = 1
 	if is_backstab(player_grid_pos, target_enemy.grid_pos, target_enemy.facing):
-		damage = 3  # ▼追加�E�背後を取ってぁE��らダメージ3倁E		print("背後を取った！E大ダメージ�E�E)
+		damage = 3  # ▼追加：背後を取っていたらダメージ3倍
+		print("背後を取った！ 大ダメージ！")
 
 	var died = target_enemy.take_damage(damage)
-	print("敵に攻撁E��E残りHP: ", target_enemy.hp)
+	print("敵に攻撃！ 残りHP: ", target_enemy.hp)
 
 	if died:
-		print("敵を倒した！E)
+		print("敵を倒した！")
 		enemies.erase(target_enemy)
 		target_enemy.queue_free()
 
 	call_enemy_turn()
 
-# ▼変更�E�アイチE��を拾ったら見た目も消す
+# ▼変更：アイテムを拾ったら見た目も消す
 func pick_up_item(pos: Vector2i) -> void:
 	var item: ItemData = items_on_ground[pos]
 	player_inventory.append(item)
@@ -205,7 +207,7 @@ func pick_up_item(pos: Vector2i) -> void:
 		item_visuals[pos].queue_free()
 		item_visuals.erase(pos)
 
-	print("拾っぁE ", item.display_name)
+	print("拾った！ ", item.display_name)
 	update_inventory_label()
 
 func update_player_position_visual() -> void:
@@ -248,7 +250,8 @@ func move_enemy_toward_player(e: Enemy) -> void:
 			if abs(diff.x) + abs(diff.y) == 1:
 				attack_player_from(e)
 			return
-		"wander":  # ▼追加�E�ランダムにそ�E場を徘徊すめE			wander_enemy(e)
+		"wander":  # ▼追加：ランダムにその場を徘徊する
+			wander_enemy(e)
 			return
 		"chase", _:
 			pass
@@ -310,11 +313,12 @@ func attack_player_from(e: Enemy) -> void:
 	var damage = 1
 	if is_backstab(e.grid_pos, player_grid_pos, player_facing):
 		damage = 3
-		print("敵に背後を取られた�E�E大ダメージ�E�E)
+		print("敵に背後を取られた！ 大ダメージ！")
 	player_take_damage(damage)
+
 func player_take_damage(amount: int) -> void:
 	player_hp -= amount
-	print("プレイヤーが攻撁E��受けた！E残りHP: ", player_hp)
+	print("プレイヤーが攻撃を受けた！ 残りHP: ", player_hp)
 	update_hp_label()
 
 	if player_hp <= 0:
@@ -325,7 +329,7 @@ func update_hp_label() -> void:
 
 func update_inventory_label() -> void:
 	if player_inventory.is_empty():
-		inventory_label.text = "持ち物: なぁE
+		inventory_label.text = "持ち物: なし"
 		return
 	var names: Array[String] = []
 	for item in player_inventory:
@@ -334,5 +338,5 @@ func update_inventory_label() -> void:
 
 func game_over() -> void:
 	is_game_over = true
-	print("ゲームオーバ�E...")
+	print("ゲームオーバー...")
 	hp_label.text = "GAME OVER"
