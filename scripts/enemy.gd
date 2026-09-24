@@ -26,6 +26,10 @@ func move_to(pos: Vector2i) -> void:
 	var direction = pos - grid_pos
 	if direction != Vector2i.ZERO:
 		facing = direction
+		if direction.x > 0:
+			flip_h = true
+		elif direction.x < 0:
+			flip_h = false
 	grid_pos = pos
 	var target_screen_pos = Vector2(grid_pos * TILE_SIZE) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
 	if move_tween:
