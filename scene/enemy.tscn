@@ -2,7 +2,11 @@
 
 [ext_resource type="Texture2D" uid="uid://b1iqnpk8ibuif" path="res://enemy.tres" id="1_7k104"]
 [ext_resource type="Script" uid="uid://c4n40ju52ald7" path="res://scripts/enemy.gd" id="2_4gyqm"]
+[ext_resource type="Texture2D" uid="uid://0tk6bsq0qupj" path="res://sprites/EyeIcon.png" id="3_8u16h"]
 
 [node name="Enemy" type="Sprite2D" unique_id=315850396]
 texture = ExtResource("1_7k104")
 script = ExtResource("2_4gyqm")
+
+[node name="EyeIcon" type="Sprite2D" parent="." unique_id=1031469188]
+texture = ExtResource("3_8u16h")

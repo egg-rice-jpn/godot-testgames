@@ -4,6 +4,7 @@ class_name Enemy
 const TILE_SIZE = 32
 
 @export var data: EnemyData  # ▼追加：どの種類の敵かをここで受け取る
+@onready var eye_icon: Node2D = $EyeIcon
 
 var grid_pos: Vector2i
 var hp: int  # ▼変更：初期値は決め打ちせず、dataから設定する
@@ -20,7 +21,13 @@ func setup(enemy_data: EnemyData) -> void:  # ▼追加：スポーン時にデ�
 func set_grid_pos_immediate(pos: Vector2i) -> void:
 	grid_pos = pos
 	position = Vector2(grid_pos * TILE_SIZE) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
-
+func update_eye_visual() -> void:
+	if facing == Vector2i.UP:
+		eye_icon.position = Vector2(0, -10)  # 上に表示
+	elif facing == Vector2i.DOWN:
+		eye_icon.position = Vector2(0, 10)   # 下に表示
+	else:
+		eye_icon.position = Vector2(0, 0)    # 左右は flip_h で表現するので目は中央でOK
 func move_to(pos: Vector2i) -> void:
 	# ▼追加：移動方向から向きを更新
 	var direction = pos - grid_pos
@@ -30,6 +37,8 @@ func move_to(pos: Vector2i) -> void:
 			flip_h = true
 		elif direction.x < 0:
 			flip_h = false
+	update_eye_visual()
+
 	grid_pos = pos
 	var target_screen_pos = Vector2(grid_pos * TILE_SIZE) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
 	if move_tween:
