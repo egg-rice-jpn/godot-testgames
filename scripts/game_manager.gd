@@ -1,10 +1,9 @@
 extends Node2D
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
 @onready var player: AnimatedSprite2D = $Player
+@onready var facing_arrow: Polygon2D = $Player/FacingArrow
 @onready var hp_label: Label = $CanvasLayer/HPLabel
 @onready var inventory_label: Label = $CanvasLayer/InventoryLabel
-@onready var facing_arrow: Polygon2D = $Player/FacingArrow
-
 
 const EnemyScene = preload("res://scene/enemy.tscn")
 const ItemScene = preload("res://scene/item.tscn")
@@ -16,6 +15,7 @@ const ItemScene = preload("res://scene/item.tscn")
 @export var current_map_path: String = "res://data/maps/map_01.txt"
 
 const TILE_SIZE = 32
+const DODGE_TURNS = 3
 enum TileType { FLOOR = 0, WALL = 1 }
 
 var map_layout: Array[String] = []
@@ -25,6 +25,7 @@ var MAP_HEIGHT: int = 0
 
 var map_data: Array = []
 var player_grid_pos: Vector2i = Vector2i(2, 2)
+var player_facing: Vector2i = Vector2i.DOWN
 
 var enemies: Array[Enemy] = []
 var enemy_spawn_points: Array = []
@@ -37,10 +38,11 @@ var player_inventory: Array[ItemData] = []
 var is_moving: bool = false
 var move_tween: Tween
 
-var player_hp: int = 20
-var player_max_hp: int = 20
-var player_facing: Vector2i = Vector2i.DOWN
+var player_hp: int = 20  # TODO: テスト後に5へ戻す
+var player_max_hp: int = 20  # TODO: テスト後に5へ戻す
 var is_game_over: bool = false
+
+
 
 func _ready() -> void:
 	initialize_map()
@@ -103,7 +105,7 @@ func draw_map() -> void:
 			if map_data[x][y] == TileType.WALL:
 				tile_map_layer.set_cell(coords, 0, Vector2i(0, 0))
 			else:
-				tile_map_layer.set_cell(coords, 0, Vector2i(0, 2))
+				tile_map_layer.set_cell(coords, 0, Vector2i(0, 1))
 
 func spawn_enemies() -> void:
 	for entry in enemy_spawn_points:
@@ -113,7 +115,6 @@ func spawn_enemies() -> void:
 		e.set_grid_pos_immediate(entry.pos)
 		enemies.append(e)
 
-# ▼変更：アイテムの見た目も表示する
 func place_items() -> void:
 	items_on_ground.clear()
 	item_visuals.clear()
@@ -130,7 +131,8 @@ func get_enemy_at(pos: Vector2i) -> Enemy:
 		if e.grid_pos == pos:
 			return e
 	return null
-# ▼追加：攻撃者から見て、対象の背後を取っているか判定する共通関数
+
+# 攻撃者が対象の背後にいるか（対象の向いている方向に攻撃者→対象の向きが一致すれば背後）
 func is_backstab(attacker_pos: Vector2i, target_pos: Vector2i, target_facing: Vector2i) -> bool:
 	var attack_dir = target_pos - attacker_pos
 	return attack_dir == target_facing
@@ -145,7 +147,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_down"): direction = Vector2i.DOWN
 	elif event.is_action_pressed("ui_up"): direction = Vector2i.UP
 	if direction != Vector2i.ZERO:
-		try_move_player(direction)
+		if Input.is_key_pressed(KEY_SHIFT):
+			try_dodge_roll(direction)
+		else:
+			try_move_player(direction)
 
 func try_move_player(direction: Vector2i) -> void:
 	if is_moving:
@@ -161,11 +166,9 @@ func try_move_player(direction: Vector2i) -> void:
 
 	var target_pos = player_grid_pos + direction
 
-	print("player_grid_pos: ", player_grid_pos, " / target_pos: ", target_pos, " / player.position: ", player.position)
-
 	if target_pos.x >= 0 and target_pos.x < MAP_WIDTH and target_pos.y >= 0 and target_pos.y < MAP_HEIGHT:
 		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
-			print("壁にぶつかりました（データ上で判定） target_pos: ", target_pos)
+			print("壁にぶつかりました（データ上で判定）")
 			return
 
 		var target_enemy = get_enemy_at(target_pos)
@@ -181,10 +184,54 @@ func try_move_player(direction: Vector2i) -> void:
 
 		call_enemy_turn()
 
+# ドッジロール：2マス先へ移動。間のマスは敵がいても飛び越えられる
+func try_dodge_roll(direction: Vector2i) -> void:
+	if is_moving:
+		return
+
+	var mid_pos = player_grid_pos + direction
+	var land_pos = player_grid_pos + direction * 2
+
+	if land_pos.x < 0 or land_pos.x >= MAP_WIDTH or land_pos.y < 0 or land_pos.y >= MAP_HEIGHT:
+		print("そちらにはドッジロールできません")
+		return
+	if map_data[mid_pos.x][mid_pos.y] == TileType.WALL:
+		print("壁があってドッジロールできません")
+		return
+	if map_data[land_pos.x][land_pos.y] == TileType.WALL:
+		print("着地点が壁でドッジロールできません")
+		return
+	if get_enemy_at(land_pos) != null:
+		print("着地点に敵がいてドッジロールできません")
+		return
+
+	# ロール開始時にプレイヤーへ隣接している敵を記録しておく
+	var adjacent_enemies: Array[Enemy] = []
+	for e in enemies:
+		var diff = e.grid_pos - player_grid_pos
+		if abs(diff.x) + abs(diff.y) == 1:
+			adjacent_enemies.append(e)
+
+	player_facing = direction
+	update_facing_visual()
+	if direction.x > 0:
+		player.flip_h = false
+	elif direction.x < 0:
+		player.flip_h = true
+
+	player_grid_pos = land_pos
+	update_player_position_visual(0.25)
+
+	if items_on_ground.has(player_grid_pos):
+		pick_up_item(player_grid_pos)
+
+	print("ドッジロール！")
+	call_enemy_turn_dodge(adjacent_enemies)
+
 func attack_enemy(target_enemy: Enemy) -> void:
 	var damage = 1
 	if is_backstab(player_grid_pos, target_enemy.grid_pos, target_enemy.facing):
-		damage = 3  # ▼追加：背後を取っていたらダメージ3倍
+		damage = 3
 		print("背後を取った！ 大ダメージ！")
 
 	var died = target_enemy.take_damage(damage)
@@ -197,7 +244,6 @@ func attack_enemy(target_enemy: Enemy) -> void:
 
 	call_enemy_turn()
 
-# ▼変更：アイテムを拾ったら見た目も消す
 func pick_up_item(pos: Vector2i) -> void:
 	var item: ItemData = items_on_ground[pos]
 	player_inventory.append(item)
@@ -207,10 +253,10 @@ func pick_up_item(pos: Vector2i) -> void:
 		item_visuals[pos].queue_free()
 		item_visuals.erase(pos)
 
-	print("拾った！ ", item.display_name)
+	print("拾った: ", item.display_name)
 	update_inventory_label()
 
-func update_player_position_visual() -> void:
+func update_player_position_visual(duration: float = 0.15) -> void:
 	var target_screen_pos = Vector2(player_grid_pos * TILE_SIZE) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
 	is_moving = true
 
@@ -219,12 +265,14 @@ func update_player_position_visual() -> void:
 	if move_tween:
 		move_tween.kill()
 	move_tween = create_tween()
-	move_tween.tween_property(player, "position", target_screen_pos, 0.15) \
+	move_tween.tween_property(player, "position", target_screen_pos, duration) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	move_tween.finished.connect(func():
 		is_moving = false
 		player.play("default")
 	)
+
+# 矢印は上向きの三角形を基準に回転させる
 func update_facing_visual() -> void:
 	var angle = 0.0
 	if player_facing == Vector2i.UP:
@@ -237,26 +285,60 @@ func update_facing_visual() -> void:
 		angle = -PI / 2
 
 	facing_arrow.rotation = angle
+
 func call_enemy_turn() -> void:
 	for e in enemies:
+		enemy_act(e)
+		if is_game_over:
+			return
+
+# ドッジロール用：隣接していた敵は1回、それ以外の敵は DODGE_TURNS 回行動する
+func call_enemy_turn_dodge(adjacent_enemies: Array[Enemy]) -> void:
+	for turn_index in range(DODGE_TURNS):
+		for e in enemies:
+			if turn_index > 0 and e in adjacent_enemies:
+				continue
+			enemy_act(e)
+			if is_game_over:
+				return
+
+func enemy_act(e: Enemy) -> void:
+	if e.is_winding_up:
+		process_windup(e)
+	else:
 		move_enemy_toward_player(e)
 		if is_game_over:
 			return
+
+# 攻撃の予備動作を開始する（今のプレイヤーの位置を狙う）
+func start_enemy_attack(e: Enemy) -> void:
+	e.begin_windup(player_grid_pos, e.data.attack_windup)
+
+# 予備動作の進行。終わったら狙っていたマスを攻撃する
+func process_windup(e: Enemy) -> void:
+	e.windup_counter -= 1
+	if e.windup_counter > 0:
+		return
+
+	var target = e.windup_target
+	e.end_windup()
+	if player_grid_pos == target:
+		attack_player_from(e)
+	else:
+		print("敵の攻撃は空振りした！")
 
 func move_enemy_toward_player(e: Enemy) -> void:
 	match e.data.move_pattern:
 		"stay":
 			var diff = player_grid_pos - e.grid_pos
 			if abs(diff.x) + abs(diff.y) == 1:
-				attack_player_from(e)
+				start_enemy_attack(e)
 			return
-		"wander":  # ▼追加：ランダムにその場を徘徊する
+		"wander":
 			wander_enemy(e)
 			return
 		"chase", _:
 			pass
-
-
 
 	var diff = player_grid_pos - e.grid_pos
 
@@ -279,17 +361,18 @@ func move_enemy_toward_player(e: Enemy) -> void:
 		return
 
 	if target_pos == player_grid_pos:
-		attack_player_from(e)  # ▼変更
+		start_enemy_attack(e)
 		return
 
 	if get_enemy_at(target_pos) != null:
 		return
 
 	e.move_to(target_pos)
+
 func wander_enemy(e: Enemy) -> void:
 	var diff = player_grid_pos - e.grid_pos
 	if abs(diff.x) + abs(diff.y) == 1:
-		attack_player_from(e)
+		start_enemy_attack(e)
 		return
 
 	var directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
@@ -308,7 +391,7 @@ func wander_enemy(e: Enemy) -> void:
 
 		e.move_to(target_pos)
 		return
-# ▼ここに追加
+
 func attack_player_from(e: Enemy) -> void:
 	var damage = 1
 	if is_backstab(e.grid_pos, player_grid_pos, player_facing):

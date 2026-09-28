@@ -11,4 +11,5 @@ region = Rect2(0, 0, 32, 32)
 script = ExtResource("1_ijfau")
 display_name = "goblin"
 sprite = SubResource("AtlasTexture_l0k5m")
+move_pattern = "wander"
 metadata/_custom_type_script = "uid://b6yv8xok3nogc"
