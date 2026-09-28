@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://duc6sq1nro5tr"]
 
 [ext_resource type="Script" uid="uid://bmaih4c5p0m2a" path="res://scripts/game_manager.gd" id="1_8cna3"]
+[ext_resource type="Resource" uid="uid://b35okftye8qfx" path="res://data/player/player_default.tres" id="2_8cna3"]
 [ext_resource type="Texture2D" uid="uid://x3wgusvnrbb1" path="res://sprites/MiniShieldMan.png" id="4_8cna3"]
 [ext_resource type="Texture2D" uid="uid://dxnlbw3u20pe7" path="res://terrain/tiles.png" id="5_yyxvu"]
 
@@ -100,6 +101,7 @@ animations = [{
 
 [node name="GameManager" type="Node2D" unique_id=1330936903]
 script = ExtResource("1_8cna3")
+player_data = ExtResource("2_8cna3")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1368307260]
 tile_map_data = PackedByteArray(0, 0, 15, 0, 250, 255, 3, 0, 0, 0, 0, 0, 0, 0)

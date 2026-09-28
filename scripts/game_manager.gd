@@ -11,11 +11,12 @@ const ItemScene = preload("res://scene/item.tscn")
 @export var slime_data: EnemyData = preload("res://data/enemies/slime_data.tres")
 @export var goblin_data: EnemyData = preload("res://data/enemies/goblin_data.tres")
 @export var potion_data: ItemData = preload("res://data/items/potion_data.tres")
+@export var player_data: PlayerData
 
 @export var current_map_path: String = "res://data/maps/map_01.txt"
 
 const TILE_SIZE = 32
-const DODGE_TURNS = 3
+
 enum TileType { FLOOR = 0, WALL = 1 }
 
 var map_layout: Array[String] = []
@@ -38,13 +39,16 @@ var player_inventory: Array[ItemData] = []
 var is_moving: bool = false
 var move_tween: Tween
 
-var player_hp: int = 20  # TODO: テスト後に5へ戻す
-var player_max_hp: int = 20  # TODO: テスト後に5へ戻す
+var player_hp: int = 0
 var is_game_over: bool = false
 
 
 
 func _ready() -> void:
+	if player_data == null:
+		player_data = PlayerData.new()  # 未設定でも初期値で動くようにしておく
+	player_hp = player_data.max_hp
+
 	initialize_map()
 	draw_map()
 	update_player_position_visual()
@@ -229,9 +233,9 @@ func try_dodge_roll(direction: Vector2i) -> void:
 	call_enemy_turn_dodge(adjacent_enemies)
 
 func attack_enemy(target_enemy: Enemy) -> void:
-	var damage = 1
+	var damage = player_data.attack_damage
 	if is_backstab(player_grid_pos, target_enemy.grid_pos, target_enemy.facing):
-		damage = 3
+		damage *= player_data.backstab_multiplier
 		print("背後を取った！ 大ダメージ！")
 
 	var died = target_enemy.take_damage(damage)
@@ -294,7 +298,7 @@ func call_enemy_turn() -> void:
 
 # ドッジロール用：隣接していた敵は1回、それ以外の敵は DODGE_TURNS 回行動する
 func call_enemy_turn_dodge(adjacent_enemies: Array[Enemy]) -> void:
-	for turn_index in range(DODGE_TURNS):
+	for turn_index in range(player_data.dodge_turns):
 		for e in enemies:
 			if turn_index > 0 and e in adjacent_enemies:
 				continue
@@ -395,7 +399,7 @@ func wander_enemy(e: Enemy) -> void:
 func attack_player_from(e: Enemy) -> void:
 	var damage = 1
 	if is_backstab(e.grid_pos, player_grid_pos, player_facing):
-		damage = 3
+		damage *= player_data.backstab_multiplier
 		print("敵に背後を取られた！ 大ダメージ！")
 	player_take_damage(damage)
 
@@ -408,7 +412,7 @@ func player_take_damage(amount: int) -> void:
 		game_over()
 
 func update_hp_label() -> void:
-	hp_label.text = "HP: %d / %d" % [player_hp, player_max_hp]
+	hp_label.text = "HP: %d / %d" % [player_hp, player_data.max_hp]
 
 func update_inventory_label() -> void:
 	if player_inventory.is_empty():
