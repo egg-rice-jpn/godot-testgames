@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bmaih4c5p0m2a" path="res://scripts/game_manager.gd" id="1_8cna3"]
 [ext_resource type="Resource" uid="uid://b35okftye8qfx" path="res://data/player/player_default.tres" id="2_8cna3"]
 [ext_resource type="Texture2D" uid="uid://x3wgusvnrbb1" path="res://sprites/MiniShieldMan.png" id="4_8cna3"]
+[ext_resource type="Script" uid="uid://cr33l0sv8tknl" path="res://scripts/hud.gd" id="5_hy1te"]
 [ext_resource type="Texture2D" uid="uid://dxnlbw3u20pe7" path="res://terrain/tiles.png" id="5_yyxvu"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a81tu"]
@@ -120,6 +121,7 @@ polygon = PackedVector2Array(0, -74, -24, -53, -10, -53, -10, -20, 10, -20, 9, -
 uv = PackedVector2Array(0, -74, -24, -53, -10, -53, -10, -20, 10, -20, 9, -52, 24, -50)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=105210851]
+script = ExtResource("5_hy1te")
 
 [node name="HPLabel" type="Label" parent="CanvasLayer" unique_id=731037482]
 offset_left = 16.0

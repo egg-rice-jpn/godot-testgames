@@ -2,8 +2,7 @@ extends Node2D
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
 @onready var player: AnimatedSprite2D = $Player
 @onready var facing_arrow: Polygon2D = $Player/FacingArrow
-@onready var hp_label: Label = $CanvasLayer/HPLabel
-@onready var inventory_label: Label = $CanvasLayer/InventoryLabel
+@onready var hud: Hud = $CanvasLayer
 
 const EnemyScene = preload("res://scene/enemy.tscn")
 const ItemScene = preload("res://scene/item.tscn")
@@ -412,18 +411,13 @@ func player_take_damage(amount: int) -> void:
 		game_over()
 
 func update_hp_label() -> void:
-	hp_label.text = "HP: %d / %d" % [player_hp, player_data.max_hp]
+	hud.update_hp(player_hp, player_data.max_hp)
 
 func update_inventory_label() -> void:
-	if player_inventory.is_empty():
-		inventory_label.text = "持ち物: なし"
-		return
-	var names: Array[String] = []
-	for item in player_inventory:
-		names.append(item.display_name)
-	inventory_label.text = "持ち物: " + ", ".join(names)
+	hud.update_inventory(player_inventory)
+
+
 
 func game_over() -> void:
 	is_game_over = true
-	print("ゲームオーバー...")
-	hp_label.text = "GAME OVER"
+	hud.show_game_over()   # hp_label.text = "GAME OVER" の代わり
