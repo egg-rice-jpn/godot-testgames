@@ -1,5 +1,5 @@
 extends Node2D
-@onready var tile_map_layer: TileMapLayer = $TileMapLayer
+@onready var map: MapManager = $TileMapLayer   # 元の tile_map_layer の行と差し替え
 @onready var player: AnimatedSprite2D = $Player
 @onready var facing_arrow: Polygon2D = $Player/FacingArrow
 @onready var hud: Hud = $CanvasLayer
@@ -12,25 +12,17 @@ const ItemScene = preload("res://scene/item.tscn")
 @export var potion_data: ItemData = preload("res://data/items/potion_data.tres")
 @export var player_data: PlayerData
 
-@export var current_map_path: String = "res://data/maps/map_01.txt"
+
 
 const TILE_SIZE = 32
 
-enum TileType { FLOOR = 0, WALL = 1 }
 
-var map_layout: Array[String] = []
 
-var MAP_WIDTH: int = 0
-var MAP_HEIGHT: int = 0
 
-var map_data: Array = []
 var player_grid_pos: Vector2i = Vector2i(2, 2)
 var player_facing: Vector2i = Vector2i.DOWN
 
 var enemies: Array[Enemy] = []
-var enemy_spawn_points: Array = []
-
-var item_spawn_points: Array = []
 var items_on_ground: Dictionary = {}
 var item_visuals: Dictionary = {}
 var player_inventory: Array[ItemData] = []
@@ -48,8 +40,8 @@ func _ready() -> void:
 		player_data = PlayerData.new()  # 未設定でも初期値で動くようにしておく
 	player_hp = player_data.max_hp
 
-	initialize_map()
-	draw_map()
+	map.load_map()   # initialize_map() の代わり
+	map.draw_map()   # draw_map() の代わり
 	update_player_position_visual()
 	spawn_enemies()
 	place_items()
@@ -57,75 +49,23 @@ func _ready() -> void:
 	update_inventory_label()
 	update_facing_visual()
 
-func load_map_layout(path: String) -> Array[String]:
-	var lines: Array[String] = []
-	var file = FileAccess.open(path, FileAccess.READ)
-	while not file.eof_reached():
-		var line = file.get_line()
-		if line != "":
-			lines.append(line)
-	file.close()
-	return lines
-
-func initialize_map() -> void:
-	map_layout = load_map_layout(current_map_path)
-
-	map_data.clear()
-	enemy_spawn_points.clear()
-	item_spawn_points.clear()
-
-	MAP_HEIGHT = map_layout.size()
-	MAP_WIDTH = map_layout[0].length()
-
-	for x in range(MAP_WIDTH):
-		map_data.append([])
-		for y in range(MAP_HEIGHT):
-			map_data[x].append(TileType.FLOOR)
-
-	for y in range(MAP_HEIGHT):
-		var row = map_layout[y]
-		for x in range(MAP_WIDTH):
-			var symbol = row[x]
-			match symbol:
-				"#":
-					map_data[x][y] = TileType.WALL
-				"S":
-					map_data[x][y] = TileType.FLOOR
-					enemy_spawn_points.append({"pos": Vector2i(x, y), "data": slime_data})
-				"G":
-					map_data[x][y] = TileType.FLOOR
-					enemy_spawn_points.append({"pos": Vector2i(x, y), "data": goblin_data})
-				"I":
-					map_data[x][y] = TileType.FLOOR
-					item_spawn_points.append({"pos": Vector2i(x, y), "data": potion_data})
-				_:
-					map_data[x][y] = TileType.FLOOR
-
-func draw_map() -> void:
-	for x in range(MAP_WIDTH):
-		for y in range(MAP_HEIGHT):
-			var coords = Vector2i(x, y)
-			if map_data[x][y] == TileType.WALL:
-				tile_map_layer.set_cell(coords, 0, Vector2i(0, 0))
-			else:
-				tile_map_layer.set_cell(coords, 0, Vector2i(0, 1))
-
 func spawn_enemies() -> void:
-	for entry in enemy_spawn_points:
+	for entry in map.enemy_spawn_points:
+		var data: EnemyData = slime_data if entry.symbol == "S" else goblin_data
 		var e: Enemy = EnemyScene.instantiate()
 		add_child(e)
-		e.setup(entry.data)
+		e.setup(data)
 		e.set_grid_pos_immediate(entry.pos)
 		enemies.append(e)
 
 func place_items() -> void:
 	items_on_ground.clear()
 	item_visuals.clear()
-	for entry in item_spawn_points:
-		items_on_ground[entry.pos] = entry.data
+	for entry in map.item_spawn_points:
+		items_on_ground[entry.pos] = potion_data
 		var iv: ItemVisual = ItemScene.instantiate()
 		add_child(iv)
-		iv.setup(entry.data)
+		iv.setup(potion_data)
 		iv.set_grid_pos(entry.pos)
 		item_visuals[entry.pos] = iv
 
@@ -169,23 +109,32 @@ func try_move_player(direction: Vector2i) -> void:
 
 	var target_pos = player_grid_pos + direction
 
-	if target_pos.x >= 0 and target_pos.x < MAP_WIDTH and target_pos.y >= 0 and target_pos.y < MAP_HEIGHT:
-		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
-			print("壁にぶつかりました（データ上で判定）")
-			return
+	if not map.is_inside(target_pos):
+		return
+	if map.is_wall(target_pos):
+		print("壁にぶつかりました")
+		return
 
-		var target_enemy = get_enemy_at(target_pos)
-		if target_enemy:
-			attack_enemy(target_enemy)
-			return
+	var target_enemy = get_enemy_at(target_pos)
+	if target_enemy:
+		attack_enemy(target_enemy)
+		return
 
-		player_grid_pos = target_pos
-		update_player_position_visual()
+	player_grid_pos = target_pos
+	update_player_position_visual()
 
-		if items_on_ground.has(player_grid_pos):
+	if items_on_ground.has(player_grid_pos):
+		pick_up_item(player_grid_pos)
+
+	call_enemy_turn()
+
+	player_grid_pos = target_pos
+	update_player_position_visual()
+
+	if items_on_ground.has(player_grid_pos):
 			pick_up_item(player_grid_pos)
 
-		call_enemy_turn()
+	call_enemy_turn()
 
 # ドッジロール：2マス先へ移動。間のマスは敵がいても飛び越えられる
 func try_dodge_roll(direction: Vector2i) -> void:
@@ -195,13 +144,13 @@ func try_dodge_roll(direction: Vector2i) -> void:
 	var mid_pos = player_grid_pos + direction
 	var land_pos = player_grid_pos + direction * 2
 
-	if land_pos.x < 0 or land_pos.x >= MAP_WIDTH or land_pos.y < 0 or land_pos.y >= MAP_HEIGHT:
+	if not map.is_inside(land_pos):
 		print("そちらにはドッジロールできません")
 		return
-	if map_data[mid_pos.x][mid_pos.y] == TileType.WALL:
+	if map.is_wall(mid_pos):
 		print("壁があってドッジロールできません")
 		return
-	if map_data[land_pos.x][land_pos.y] == TileType.WALL:
+	if map.is_wall(land_pos):
 		print("着地点が壁でドッジロールできません")
 		return
 	if get_enemy_at(land_pos) != null:
@@ -358,9 +307,7 @@ func move_enemy_toward_player(e: Enemy) -> void:
 
 	var target_pos = e.grid_pos + move_dir
 
-	if target_pos.x < 0 or target_pos.x >= MAP_WIDTH or target_pos.y < 0 or target_pos.y >= MAP_HEIGHT:
-		return
-	if map_data[target_pos.x][target_pos.y] == TileType.WALL:
+	if not map.is_walkable(target_pos):
 		return
 
 	if target_pos == player_grid_pos:
@@ -383,9 +330,7 @@ func wander_enemy(e: Enemy) -> void:
 
 	for dir in directions:
 		var target_pos = e.grid_pos + dir
-		if target_pos.x < 0 or target_pos.x >= MAP_WIDTH or target_pos.y < 0 or target_pos.y >= MAP_HEIGHT:
-			continue
-		if map_data[target_pos.x][target_pos.y] == TileType.WALL:
+		if not map.is_walkable(target_pos):
 			continue
 		if target_pos == player_grid_pos:
 			continue
