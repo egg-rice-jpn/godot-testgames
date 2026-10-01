@@ -9,7 +9,9 @@ const TILE_SIZE = 32
 
 var grid_pos: Vector2i
 var hp: int
-var move_tween: Tween
+# 移動アニメーションの順番待ち
+var move_queue: Array[Vector2] = []
+var is_animating: bool = false
 
 var facing: Vector2i = Vector2i.DOWN
 
@@ -39,11 +41,22 @@ func move_to(pos: Vector2i) -> void:
 
 	grid_pos = pos
 	var target_screen_pos = Vector2(grid_pos * TILE_SIZE) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
-	if move_tween:
-		move_tween.kill()
-	move_tween = create_tween()
-	move_tween.tween_property(self, "position", target_screen_pos, 0.15) \
+
+	move_queue.append(target_screen_pos)
+	if not is_animating:
+		_play_next_move()
+
+func _play_next_move() -> void:
+	if move_queue.is_empty():
+		is_animating = false
+		return
+
+	is_animating = true
+	var target = move_queue.pop_front()
+	var t = create_tween()
+	t.tween_property(self, "position", target, 0.15) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	t.finished.connect(_play_next_move)
 
 # 予備動作の開始：狙うマスの方を向き、赤く光らせる
 func begin_windup(target: Vector2i, turns: int) -> void:
